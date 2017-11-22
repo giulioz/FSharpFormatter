@@ -1,0 +1,9 @@
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/bin/Debug/FSharpCodeFormatter.exe.config
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/bin/Debug/FSharpCodeFormatter.XML
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/bin/Debug/FSharpCodeFormatter.exe
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/bin/Debug/FSharpCodeFormatter.pdb
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/bin/Debug/System.ValueTuple.dll
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/obj/Debug/FSharpCodeFormatter.fsprojResolveAssemblyReference.cache
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/obj/Debug/FSharpCodeFormatter.fsproj.CoreCompileInputs.cache
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/obj/Debug/FSharpCodeFormatter.exe
+/Users/giuliozausa/Downloads/FSharpCodeFormatter/obj/Debug/FSharpCodeFormatter.pdb

@@ -66,14 +66,17 @@ let private IsCloseToken str = List.exists (StartsWith str) <| ["in"; "else"]
 let indent (lines : string list) =
     let rec aux stack = function
         | [] -> [] // EOF
-        | s :: ss when IsClearToken s ->
-            (0, s) :: (ss |> aux (0, []))
-        | s :: ss when IsTabToken s ->
-            (peek stack, s) :: (ss |> aux (push (peek stack + 1) stack))
-        | s :: ss when IsCloseToken s ->
-            (peek stack, s) :: (ss |> aux (pop stack))
-        | s :: ss ->
-            (peek stack, s) :: (ss |> aux stack)
+        | currentLine :: ss when IsClearToken s ->
+            (0, currentLine) :: (ss |> aux (0, []))
+
+        | currentLine :: ss when IsTabToken s ->
+            (peek stack, currentLine) :: (ss |> aux (push (peek stack + 1) stack))
+
+        | currentLine :: ss when IsCloseToken s ->
+            (peek stack, currentLine) :: (ss |> aux (pop stack))
+
+        | currentLine :: ss ->
+            (peek stack, currentLine) :: (ss |> aux stack)
     lines |> aux (0, [])
 
 

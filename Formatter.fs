@@ -6,6 +6,8 @@
 // thanks to Alessio Marotta for the stack idea
 // and to Dario Lazzaro for finding an non-existent bug
 // -------------------------------------------
+// !! PLEASE DO NOT STEAL, OR WE WILL HAVE BOTH NEGATIVE MARK !!
+// -------------------------------------------
 
 module FSharpCodeFormatter.Formatter
 

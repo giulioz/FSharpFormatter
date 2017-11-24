@@ -1,11 +1,10 @@
 ﻿<Properties StartupConfiguration="{6C68B6EB-79C4-47FF-89C0-4F0DD22DC642}|Default">
-  <MonoDevelop.Ide.Workbench ActiveDocument="Stato di FSharpCodeFormatter">
+  <MonoDevelop.Ide.Workbench ActiveDocument="Formatter.fs">
     <Files>
       <File FileName="Formatter.fs" Line="83" Column="1" />
       <File FileName="Test.fs" Line="66" Column="4" />
       <File FileName="Lib.fs" Line="24" Column="12" />
       <File FileName="Main.fs" Line="12" Column="15" />
-      <File FileName="Stato di FSharpCodeFormatter" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />

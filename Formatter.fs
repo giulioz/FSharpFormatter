@@ -1,26 +1,67 @@
-﻿module FSharpCodeFormatter.Formatter
+﻿// -------------------------------------------
+//   FSharpCodeFormatter
+//   (aka MagicFSharpCodeFormatter)
+//
+// Giulio Zausa, Marco Perrone
+// thanks to Alessio Marotta for the stack idea
+// and to Dario Lazzaro for finding an non-existent bug
+// -------------------------------------------
 
-open Lib
+module FSharpCodeFormatter.Formatter
 
-// se non vuoi realizzare la versione avanzata, non modificarla
-let split (w : int) (s : string) = split_lines s
+open System
 
-let parseLine str =
-    let rec aux = function
-    | "=" :: [] -> 1
-    | "->" :: [] -> 1
-    | "then" :: [] -> 1
-    | "else" :: [] -> 1
-    | "with" :: [] -> 0
-    | [] -> 0
-    | x :: xs -> aux xs
 
-    aux (tokenize_line str)
+// -------------------------------------------
+//  Stack Functions
+// -------------------------------------------
 
-// questa è la funzione principale da implementare correttamente sia per versione avanzata che per quella normale
-let rec indent (lines : string list) =
-    let rec aux lines t acc =
+/// Pushes an element into the stack, returns the element added and the stack
+let private push element = function
+    | (a, b) -> (element, element :: b)
+
+/// Pops an element from the stack, returns the element removed and the stack
+let private pop = function
+    | (a, x :: xs) -> (x, xs)
+    | (a, []) -> (a, [])
+
+/// Peeks an element from the stack, returns the first element and the stack
+let private peek = function
+    | (a, x :: xs) -> x
+    | (a, []) -> a
+
+// -------------------------------------------
+//  String Functions
+// -------------------------------------------
+
+/// Returns if the first token of a string is tok
+//let StartsWith 
+
+
+// -------------------------------------------
+//  PUBLIC FUNCTIONS
+// -------------------------------------------
+
+/// Indents splitted lines of code
+let indent (lines : string list) =
+    let rec aux (lines : string list) stack =
         match lines with
         | [] -> []
-        | s :: ss -> (t, s) :: aux ss (t + parseLine s)
-    aux lines 0
+        | s :: ss ->
+            if String.IsNullOrWhiteSpace s then
+                (0, s) :: (aux ss (0, []))
+
+            elif s.EndsWith "="      || s.EndsWith "->"
+              || s.EndsWith "then"   || s.EndsWith "else"
+              || s.EndsWith "with" then
+                (peek stack, s) :: (aux ss (push (peek stack + 1) stack))
+
+            elif s.StartsWith "in"   || s.StartsWith "else" then
+                (peek stack, s) :: (aux ss stack)
+
+            else
+                (peek stack, s) :: (aux ss (pop stack))
+    aux lines (0, [])
+
+// se non vuoi realizzare la versione avanzata, non modificarla
+let split (w : int) (s : string) = Lib.split_lines s

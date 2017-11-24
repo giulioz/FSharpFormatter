@@ -55,10 +55,20 @@ in z < y
     else false
 """
 
+let prg4 = """
+let test s =
+let temp = tok s
+match temp with
+| [] -> 0
+| x :: xs -> match x with
+| 7 -> 0 + test xs
+| 14 -> 1 + test xs
+"""
+
 let flatten = List.fold (+) ""
 
-let basic = [prg1; prg2; prg3] |> flatten
+let basic = [prg1; prg2; prg3; prg4] |> flatten
 
-let all = [prg1; prg2; prg3] |> flatten
+let all = [prg1; prg2; prg3; prg4] |> flatten
 
 

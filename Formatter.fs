@@ -30,12 +30,32 @@ let private peek = function
     | (a, x :: xs) -> x
     | (a, []) -> a
 
+
 // -------------------------------------------
 //  String Functions
 // -------------------------------------------
 
-/// Returns if the first token of a string is tok
-//let StartsWith 
+/// Returns true if the first token of a string is tok
+let private StartsWith (str : string) tok = str.StartsWith tok
+
+/// Returns true if the last token of a string is tok
+let private EndsWith (str : string) tok = str.EndsWith tok
+
+
+// -------------------------------------------
+//  Language Definitions
+// -------------------------------------------
+
+/// Returns true if the following line closes everything
+let private IsClearToken = String.IsNullOrWhiteSpace
+
+/// Returns true if the following line opens indendation
+let private IsTabToken str = List.exists (EndsWith str)     <| ["="; "->"; "then"; "else"; "with"]
+
+/// Returns true if the following line closes indendation
+let private IsCloseToken str = List.exists (StartsWith str) <| ["in"; "else"]
+
+
 
 
 // -------------------------------------------
@@ -46,22 +66,17 @@ let private peek = function
 let indent (lines : string list) =
     let rec aux (lines : string list) stack =
         match lines with
-        | [] -> []
+        | [] -> [] // EOF
+        | s :: ss when IsClearToken s ->
+            (0, s) :: (aux ss (0, []))
+        | s :: ss when IsTabToken s ->
+            (peek stack, s) :: (aux ss (push (peek stack + 1) stack))
+        | s :: ss when IsCloseToken s ->
+            (peek stack, s) :: (aux ss (pop stack))
         | s :: ss ->
-            if String.IsNullOrWhiteSpace s then
-                (0, s) :: (aux ss (0, []))
-
-            elif s.EndsWith "="      || s.EndsWith "->"
-              || s.EndsWith "then"   || s.EndsWith "else"
-              || s.EndsWith "with" then
-                (peek stack, s) :: (aux ss (push (peek stack + 1) stack))
-
-            elif s.StartsWith "in"   || s.StartsWith "else" then
-                (peek stack, s) :: (aux ss stack)
-
-            else
-                (peek stack, s) :: (aux ss (pop stack))
+            (peek stack, s) :: (aux ss stack)
     aux lines (0, [])
+
 
 // se non vuoi realizzare la versione avanzata, non modificarla
 let split (w : int) (s : string) = Lib.split_lines s

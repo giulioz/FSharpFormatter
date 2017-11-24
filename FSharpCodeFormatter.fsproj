@@ -54,7 +54,6 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.fs" />
     <Compile Include="Lib.fs" />
-    <Compile Include="LanguageDefinition.fs" />
     <Compile Include="Formatter.fsi" />
     <Compile Include="Formatter.fs" />
     <Compile Include="Test.fs" />

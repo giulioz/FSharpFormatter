@@ -1,17 +1,22 @@
-﻿// -------------------------------------------
-//   FSharpCodeFormatter
+﻿// -------------------------------------------------------------------------------
+//    _____ ____  _                      _____                          _   _
+//   |  ___/ ___|| |__   __ _ _ __ _ __ |  ___|__  _ __ _ __ ___   __ _| |_| |_ ___  _ __
+//   | |_  \___ \| '_ \ / _` | '__| '_ \| |_ / _ \| '__| '_ ` _ \ / _` | __| __/ _ \| '__|
+//   |  _|  ___) | | | | (_| | |  | |_) |  _| (_) | |  | | | | | | (_| | |_| ||  __/| |   
+//   |_|   |____/|_| |_|\__,_|_|  | .__/|_|  \___/|_|  |_| |_| |_|\__,_|\__|\__\___||_|  
+//                                |_|                                               
 //   (aka MagicFSharpCodeFormatter)
 //
 // Giulio Zausa, Marco Perrone
 // thanks to Alessio Marotta for the stack idea
-// and to Dario Lazzaro for finding an non-existent bug
+// and to Gilberto Vergerio for the impossible tests
 // -------------------------------------------
-// !! PLEASE DO NOT STEAL, OR WE WILL HAVE BOTH NEGATIVE MARK !!
+// !! PLEASE DO NOT STEAL, OR WE WILL BOTH HAVE A NEGATIVE MARK !!
 // -------------------------------------------
 
 module FSharpCodeFormatter.Formatter
 
-open System
+open Lib
 
 
 // -------------------------------------------
@@ -19,18 +24,34 @@ open System
 // -------------------------------------------
 
 /// Pushes an element into the stack, returns the element added and the stack
-let private push element = function
-    | (a, b) -> (element, element :: b)
+let private push stack element =
+    match stack with
+    | (a, b) -> (Unchecked.defaultof<'a>, element :: b)
 
 /// Pops an element from the stack, returns the element removed and the stack
-let private pop = function
-    | (a, x :: xs) -> (x, xs)
+let private pop stack =
+    match stack with
+    | (a, x :: y :: xs) -> (x, y :: xs)
+    | (a, x :: []) -> (x, [])
     | (a, []) -> (a, [])
 
 /// Peeks an element from the stack, returns the first element and the stack
-let private peek = function
+let private peek stack =
+    match stack with
     | (a, x :: xs) -> x
-    | (a, []) -> a
+    | (a, []) -> Unchecked.defaultof<'a>
+
+/// Returns the number of elements on the stack
+let rec private count stack =
+    match stack with
+    | (a, x :: xs) -> 1 + count (a, xs)
+    | (a, []) -> 0
+
+/// Increments by 1 the first element of the stack
+let private push_increment stack =
+    match stack with
+    | (a, x :: xs) -> (0, (x + 1) :: xs)
+    | (a, []) -> (0, [])
 
 
 // -------------------------------------------
@@ -38,26 +59,26 @@ let private peek = function
 // -------------------------------------------
 
 /// Returns true if the first token of a string is tok
-let private StartsWith (str : string) tok = str.StartsWith tok
+let private starts_with (str : string) tok =
+    match tokenize_line str with
+    | x :: xs when x = tok -> true
+    | _ -> false
 
 /// Returns true if the last token of a string is tok
-let private EndsWith (str : string) tok = str.EndsWith tok
+let private ends_with (str : string) tok =
+    let rec aux = function
+    | x :: [] when x = tok -> true
+    | x :: xs -> aux xs
+    | _ -> false
+    in aux (tokenize_line str)
 
-
-// -------------------------------------------
-//  Language Definitions
-// -------------------------------------------
-
-/// Returns true if the following line closes everything
-let private IsClearToken = String.IsNullOrWhiteSpace
-
-/// Returns true if the following line opens indendation
-let private IsTabToken str = List.exists (EndsWith str)     <| ["="; "->"; "then"; "else"; "with"]
-
-/// Returns true if the following line closes indendation
-let private IsCloseToken str = List.exists (StartsWith str) <| ["in"; "else"]
-
-
+/// Returns true if the string contains tok
+let private contains (str : string) tok =
+    let rec aux = function
+    | x :: xs when x = tok -> true
+    | x :: xs -> aux xs
+    | _ -> false
+    in aux (tokenize_line str)
 
 
 // -------------------------------------------
@@ -65,22 +86,67 @@ let private IsCloseToken str = List.exists (StartsWith str) <| ["in"; "else"]
 // -------------------------------------------
 
 /// Indents splitted lines of code
-let indent (lines : string list) =
-    let rec aux stack = function
-        | [] -> [] // EOF
-        | currentLine :: ss when IsClearToken currentLine ->
-            (0, currentLine) :: (ss |> aux (0, []))
+let rec indent (lines : string list) =
+    let rec aux stack last = function
+    | [] -> []
+    | str :: after ->
 
-        | currentLine :: ss when IsTabToken currentLine ->
-            (peek stack, currentLine) :: (ss |> aux (push (peek stack + 1) stack))
+        // HACK: reset everything on newline, should work without it but in some rare cases it doesn't
+        if str = "" then (0, str) :: (aux (0, []) ((0, []), []) after)
 
-        | currentLine :: ss when IsCloseToken currentLine ->
-            (peek stack, currentLine) :: (ss |> aux (pop stack))
+        // Open Match Pattern
+        elif starts_with str "|" && ends_with str "->" then
+            (peek (peek last), str) :: (aux (push_increment (peek last)) last after)
+        // Single-line Match Pattern
+        elif starts_with str "|" then
+            (peek (peek last), str) :: (aux (pop (peek last)) last after)
+        // Match Begin
+        elif starts_with str "match" then
+            (peek stack, str) :: (aux (pop stack) (stack |> push last) after)
 
-        | currentLine :: ss ->
-            (peek stack, currentLine) :: (ss |> aux stack)
-    lines |> aux (0, [])
+        // Open Return Value
+        elif str = "else" || ends_with str "->" || ends_with str "in" then
+            let lastp = if count last > 1 then pop last else last
+            (peek stack, str) :: (aux (push_increment stack) lastp after)
 
+        // Open Intermediate
+        elif ends_with str "then" || ends_with str "=" then
+            (peek stack, str) :: (aux ((peek stack + 1) |> (push stack)) last after)
+        // Single-line Intermediate
+        elif str = "" || starts_with str "let" || starts_with str "if" || starts_with str "elif" then
+            (peek stack, str) :: (aux stack last after)
 
-// se non vuoi realizzare la versione avanzata, non modificarla
-let split (w : int) (s : string) = Lib.split_lines s
+        // Single-line Return Value
+        else
+            let lastp = if count last > 1 then pop last else last
+            (peek stack, str) :: (aux (pop stack) lastp after)
+
+    in aux (0, []) ((0, []), []) lines
+
+/// Splits F# code given ideal width in characters
+let split (w : int) (s : string) =
+    let rec aux = function
+    | [] -> []
+    | x :: xs ->
+        if s.Length < w then
+            x :: aux xs
+
+        elif contains x "->" && not(ends_with x "->") then
+            let (a, b) = split_line_inc "->" x
+            a :: aux (b :: xs)
+
+        elif contains x "=" && not(ends_with x "=") && not(starts_with x "if") then
+            let (a, b) = split_line_inc "=" x
+            a :: aux (b :: xs)
+
+        elif contains x "then" && not(ends_with x "then") then
+            let (a, b) = split_line_inc "then" x
+            a :: aux (b :: xs)
+
+        elif contains x "else" then
+            let (a, b) = split_line_exc "else" x
+            a :: b :: aux xs
+
+        else x :: aux xs
+    
+    in split_lines s// |> aux

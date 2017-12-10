@@ -11,8 +11,8 @@ let format w s = render (Formatter.indent (Formatter.split w s))
 
 [<EntryPoint>]
 let main _ = 
-    let width = 10          // cambia questo per provare width diverse
-    let input = Test.basic  // puoi cambiare i sorgenti di test per provare input diversi
+    let width = 0
+    let input = Test2.all
     printfn "------------INPUT------------\n%s" input
     let output = format width input
     printfn "\n------------OUTPUT------------\n%s" output

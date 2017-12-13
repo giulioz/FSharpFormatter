@@ -1,11 +1,11 @@
 ﻿<Properties StartupConfiguration="{6C68B6EB-79C4-47FF-89C0-4F0DD22DC642}|Default">
   <MonoDevelop.Ide.Workbench ActiveDocument="Formatter.fs">
     <Files>
-      <File FileName="Formatter.fs" Line="119" Column="59" />
+      <File FileName="Formatter.fs" Line="1" Column="1" />
       <File FileName="Main.fs" Line="8" Column="50" />
       <File FileName="Lib.fs" Line="16" Column="1" />
       <File FileName="Test.fs" Line="38" Column="17" NotebookId="1" />
-      <File FileName="Test2.fs" Line="248" Column="23" NotebookId="1" />
+      <File FileName="Test2.fs" Line="248" Column="19" NotebookId="1" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />

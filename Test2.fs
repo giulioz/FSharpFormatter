@@ -1,4 +1,6 @@
-﻿module FSharpCodeFormatter.Test2
+﻿// tests by gilberto vergerio
+
+module FSharpCodeFormatter.Test2
 
 module Basic =
     let prg1 = """

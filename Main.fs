@@ -12,7 +12,7 @@ let format w s = render (Formatter.indent (Formatter.split w s))
 [<EntryPoint>]
 let main _ = 
     let width = 0
-    let input = Test2.all
+    let input = Test.all //single
     printfn "------------INPUT------------\n%s" input
     let output = format width input
     printfn "\n------------OUTPUT------------\n%s" output

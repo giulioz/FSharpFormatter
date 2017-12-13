@@ -186,15 +186,39 @@ let f1 a1 =
             f2 a1
 """
 
+let dario = """
+let f x =
+    match x with
+    | 0 -> 1
+    | 1 -> 42
+    | 2 ->
+        let x c =
+            match with
+            | 54 -> 545
+            | u74 -> trt
+            | d ->
+                let d f =
+                    match er with
+                    | 4 -> 454
+                    | 6 -> 434
+                    in dd
+                    | 54 -> 54
+                    in fd
+                    | 3 -> 0
+"""
+
 let single = """
-let test x y = if y = 0 then 0 else x / y
+let test x y = if y =
+0 then 0 else x / y
+
+let test x = match x with | 0 -> 1 | 1 -> 0
 """
 
 let flatten = List.fold (+) ""
 
 let basic = [prg1; prg2; prg3] |> flatten
 
-let all = [prg1; prg2; prg3; prg4; prg5; prgdio; prgdemonio; grzprg] |> flatten
+let all = [prg1; prg2; prg3; prg4; prg5; prgdio; prgdemonio; grzprg; gilbertoinfame; dario] |> flatten
 
-let custom = [gilbertoinfame] |> flatten
+let custom = basic//[single] |> flatten
 

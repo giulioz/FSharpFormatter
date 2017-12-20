@@ -88,25 +88,25 @@ module Basic =
     match x + 45 with
     | 47 -> x * 2
     | _ -> 7
-    res + 8
+    in res + 8
 
     let f x =
-    let res =
-    if x < 5 then
-    let a = 8
-    let b =
-    if x < 3 then 8
-    else 3
-    x + a * b
-    else
-    let c =
-    match x with
-    | 6 -> 
-    let a = 3
-    | _ -> 78
-    let d = 1
-    x * c + d
-    res + 1
+        let res =
+            if x < 5 then
+                let a = 8
+                let b =
+                    if x < 3 then 8
+                    else 3
+                in x + a * b
+            else
+                let c =
+                    match x with
+                    | 6 ->
+                        3
+                    | _ -> 78
+                let d = 1
+                in x * c + d
+        im res + 1
 
     let aaa bbb =
     match l with
@@ -134,8 +134,8 @@ module Basic =
                             match a5 with
                             | 0 -> 0
                             | 3 ->
-                            if 5 > 3 then 4 / 2
-                                    else 0
+                                if 5 > 3 then 4 / 2
+                                else 0
                             | 4 ->
                                 match a5 with
                                 | 0 -> 4
@@ -166,7 +166,7 @@ module Basic =
     let rec R n =
     if n < 2 then 1
     else R (n - 1) + R (n - 2)
-    R n
+    in R n
 
     let rec aaa bbbb =
         match aaa with
@@ -203,7 +203,7 @@ module Basic =
                         match hhh with
                         | 6 -> 8
                         | 8 -> m
-                    hhh 999
+                    in hhh 999
            elif 1 > 0 then
                if 5 > 7 then
                    if 8 > 4 then 5
@@ -261,11 +261,15 @@ module Advanced =
     """
 
     let prg3 = """
-    let rec map f l = let k = 1 let rec R c = match c with | [] -> [] | x :: xs -> match f x with | [] -> 3 | x :: xs -> match a with | [] -> [] | x :: xs -> 3 in R [] 
+    let rec map f l = let k = "if test = true then 3 else 5" let rec R c = match c with | [] -> [] | x :: xs -> match f x with | [] -> 3 | x :: xs -> match a with | [] -> [] | x :: xs -> 3 in R [] 
     """
 
     let my_prg = """
     let f1 a1 = let f2 a2 = let f3 a3 = let f4 a5 = if a5 < 0 then 0 else match a5 with | 0 -> 0 | 3 -> if 5 > 3 then 4 / 2 else 0 | 4 -> match a5 with | 0 -> 4 | _ -> 6 in f4 a3 in f3 a2 in f2 a1
+    """
+
+    let giulio_prg = """
+    let f1 a1 = match a5 with | 0 -> let a b = match b with | 0 -> 1 | 1 -> if a = 3 then 2 else 0 in a 5 | 3 -> if 5 > 3 then 4 / 2 else 0 | 4 -> 0
     """
 
 module A = Advanced
@@ -275,6 +279,6 @@ let flatten = List.fold (+) ""
 
 let basic = [B.prg1; B.prg2; B.prg3; B.prg4; B.prg5; B.my_prg] |> flatten 
 
-let advanced = [A.prg1; A.prg2; A.prg3; A.my_prg] |> flatten 
+let advanced = [A.prg1; A.prg2; A.prg3; A.my_prg; A.giulio_prg] |> flatten 
 
-let all = basic
+let all = [basic + advanced] |> flatten

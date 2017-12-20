@@ -20,10 +20,11 @@ else 3
 f y, f z
 
 let fib n =            
-            let rec R n =
-if n < 2 then 1
-else R (n - 1) + R (n - 2)
-R n
+    let rec R n =
+        if n < 2 then 1
+        else
+            R (n - 1) + R (n - 2)
+    R n
 """
 
 let prg2 = """
@@ -77,13 +78,13 @@ let a =
 let prg5 = """
 let it go =
     let delle palle =
-    match x with
-    | dio ->
-        if a = b then 3
-        else 4
-    | gesu -> no
-    | giulio ->
-        idem con patate
+        match x with
+        | dio ->
+            if a = b then 3
+            else 4
+        | gesu -> no
+        | giulio ->
+            idem con patate
     delle palle
 
 let f x =
@@ -188,23 +189,24 @@ let f1 a1 =
 
 let dario = """
 let f x =
-    match x with
-    | 0 -> 1
-    | 1 -> 42
-    | 2 ->
-        let x c =
-            match with
-            | 54 -> 545
-            | u74 -> trt
-            | d ->
-                let d f =
-                    match er with
-                    | 4 -> 454
-                    | 6 -> 434
-                    in dd
-                    | 54 -> 54
-                    in fd
-                    | 3 -> 0
+match x with
+| 0 -> 1
+| 1 -> 42
+| 2 ->
+let x c =
+match with
+| 54 -> 545
+| u74 -> trt
+| d ->
+let d f =
+match er with
+| 4 -> 454
+| 6 -> 434
+in dd
+| 54 -> 54
+in
+fd
+| 3 -> 0
 """
 
 let single = """

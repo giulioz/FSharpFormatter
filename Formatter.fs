@@ -30,34 +30,50 @@ let private push stack element =
     | (a, b) -> (element, element :: b)
 
 /// Pops an element from the stack, returns the element removed and the stack
-let private pop stack =
-    match stack with
+let private pop = function
     | (a, x :: y :: xs) -> (x, y :: xs)
     | (a, x :: []) -> (x, [])
     | (a, []) -> raise (ArgumentException("Stack empty"))
 
 /// Peeks an element from the stack, returns the first element and the stack
-let private peek stack =
-    match stack with
+let private peek = function
     | (a, x :: xs) -> x
     | (a, []) -> raise (ArgumentException("Stack empty"))
 
 /// Returns the number of elements on the stack
-let rec private count stack =
-    match stack with
+let rec private count = function
     | (a, x :: xs) -> 1 + count (a, xs)
     | (a, []) -> 0
 
-/// Increments by 1 the first element of the stack
-let private push_increment stack =
-    match stack with
-    | (a, x :: xs) -> (0, (x + 1) :: xs)
-    | (a, []) -> (0, [])
+
+// -------------------------------------------
+//  List Functions                          
+// -------------------------------------------
+
+/// Create a new List with a function applied
+let rec private map f = function
+    | [] -> []
+    | x :: xs -> (f x) :: (map f xs)
+
+/// Create a new List without the elements that match a given predicate
+let rec private filter f = function
+    | [] -> []
+    | x :: xs -> if f x then x :: (filter f xs) else filter f xs
+
+/// Return if a given predicate is true at least with one item of a List
+let rec private exists f = function
+    | [] -> false
+    | x :: xs -> (f x) || (exists f xs)
+
+/// Create a new list that contains every item of a list
+let rec private list_concat = function
+    | [] -> []
+    | x :: xs -> x @ list_concat xs
 
 
-// ------------------------------------------- //
-//  String Functions                           //
-// ------------------------------------------- //
+// -------------------------------------------
+//  String Functions                          
+// -------------------------------------------
 
 /// Returns true if the first token of a string is tok
 let private starts_with (str : string) tok =
@@ -73,16 +89,19 @@ let private ends_with (str : string) tok =
     | _ -> false
     in aux (tokenize_line str)
 
-/// Returns true if the string contains tok
-let private contains (str : string) tok =
-    let rec aux = function
-    | x :: xs when x = tok -> true
-    | x :: xs -> aux xs
-    | _ -> false
-    in aux (tokenize_line str)
+/// Returns true if the first token of a string is a member of tok
+let private starts_with_mul (str : string) tok =
+    exists (starts_with str) tok
 
-let private clean_string (str : string) =
-    str.Replace("\t", " ").Replace("\r", " ").Replace("\n", " ")
+/// Returns true if the last token of a string is a member of tok
+let private ends_with_mul (str : string) tok =
+    exists (ends_with str) tok
+
+/// Create a string from a list with a separator
+let rec private string_concat separator = function
+    | [] -> ""
+    | x :: [] -> x
+    | x :: xs -> x + " " + (string_concat separator xs)
 
 
 // -------------------------------------------
@@ -91,93 +110,116 @@ let private clean_string (str : string) =
 
 /// Indents splitted lines of code
 let rec indent (lines : string list) =
-    let rec aux stack last = function
-    | [] -> []
+    let rec aux stack last_stack match_opening_tabs i = function
+    | [] ->
+        // Check if every binding was closed
+        if count stack = 1 then []
+        else failwith "Invalid input: unclosed binding"
     | str :: after ->
-
-        // HACK: pushes an element to the stack if empty to prevent an exception
-        //       to fix where there the whitespace between to lets is missing
-        let stackn =
-            if count stack = 0 then (0, [0])
-            else stack
         try
-            // HACK: reset everything on newline, should work without it but in some rare cases it doesn't
-            if str = "" then
-                (0, str) :: (aux (0, [0]) ((0, []), []) after)
+            // Current line indendation
+            let current_line =
+                if starts_with str "|" then
+                    (peek (peek last_stack), str) // Recover last stack state
+                else (peek stack, str)
+            // Current indendation stack
+            let current_stack =
+                if starts_with str "|" then
+                    peek last_stack // Recover last stack state
+                else stack
 
-            // Open Match Pattern
-            elif starts_with str "|" && ends_with str "->" then
-                (peek (peek last), str) :: (aux (push_increment (peek last)) last after)
-            // Single-line Match Pattern
-            elif starts_with str "|" then
-                (peek (peek last), str) :: (aux (pop (peek last)) last after)
-            // Match Begin
-            elif starts_with str "match" then
-                (peek stackn, str) :: (aux (pop stackn) (stackn |> push last) after)
+            // Stack value for the next line
+            let next_stack =
+                // Open Return Value
+                if str = "else" || ends_with_mul str ["->"; "in"] then
+                    (peek current_stack + 1) |> push (pop current_stack)
+                // Open Intermediate
+                elif ends_with_mul str ["then"; "="] then
+                    (peek current_stack + 1) |> (push current_stack)
+                // Single-line Intermediate
+                elif str = "" || starts_with_mul str ["let"; "if"; "elif"] then
+                    current_stack
+                // Single-line Return Value
+                else pop current_stack
 
-            // Open Return Value
-            elif str = "else" || ends_with str "->" || ends_with str "in" then
-                let lastp = if count last > 1 then pop last else last
-                (peek stackn, str) :: (aux (push_increment stackn) lastp after)
+            // Stack recovery (for pattern matching) value for the next line
+            // Keep also tab level of match begin to detect match ending
+            let (next_last_stack, next_match_opening_tabs) =
+                // Match begin: push the state into the stack
+                // Every pattern after a match begin must be at that tab level
+                if starts_with str "match" then
+                    (stack |> push last_stack, peek stack |> push match_opening_tabs)
+                // Known intermediate token: do nothing
+                elif starts_with_mul str ["|"; "let"; "if"; "elif"]
+                    || ends_with_mul str ["then"; "="] || str = "" then
+                    (last_stack, match_opening_tabs)
+                // Return value: check if indendation is behind match
+                elif count match_opening_tabs > 0 && (peek match_opening_tabs) > peek stack then
+                    (pop last_stack, pop match_opening_tabs)
+                // Return value (after the match)
+                else (last_stack, match_opening_tabs)
 
-            // Open Intermediate
-            elif ends_with str "then" || ends_with str "=" then
-                (peek stackn, str) :: (aux ((peek stackn + 1) |> (push stackn)) last after)
-            // Single-line Intermediate
-            elif str = "" || starts_with str "let" || starts_with str "if" || starts_with str "elif" then
-                (peek stackn, str) :: (aux stackn last after)
-
-            // Single-line Return Value
+            // Append current line and continue recursion
+            // adding an empty line between top-level bindings
+            if peek current_stack = 0 then
+                (0, "") :: current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
             else
-                let lastp = if count last > 1 then pop last else last
-                (peek stackn, str) :: (aux (pop stackn) lastp after)
+                current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
         with
-        | :? ArgumentException -> failwithf "Invalid input in line: %s" str
-
-    in aux (0, [0]) ((0, []), []) lines
+        // Trying to pop an empty stack: something must be wrong...
+        | :? ArgumentException -> failwithf "Invalid input in line %d: %s" i str
+    in aux (0, [0]) ((0, []), []) (0, []) 0 lines
 
 
 /// Splits F# code given ideal width in characters
-let split (w : int) (s : string) = split_lines s
-    //let rec aux2 acc state current_width = function
-    //| x :: xs ->
-    //    if x = "let" then
-    //        aux2 (acc + " " + x) "let" (current_width + x.Length) xs
-    //    elif x = "if" || x = "elif" then
-    //        aux2 (acc + " " + x) "if_case" (current_width + x.Length) xs
-    //    elif x = "=" && state = "let" then
-    //        (acc + " " + x) :: (aux2 "" "" 0 xs)
-    //    elif x = "then" && state = "if_case" then
-    //        (acc + " " + x) :: (aux2 "" "" 0 xs)
-    //    else 
-    //        aux2 (acc + " " + x) state (current_width + x.Length) xs
-    //| [] -> [acc]
-    //in aux2 "" "" 0 (s |> clean_string |> tokenize_line)
+let split (w : int) (s : string) =
 
-        (*if s.Length < w then
-            x :: aux xs
+    /// Splits everytime it's possible
+    let rec split_all acc if_case in_string : string list -> string list list = function
+    | [] -> [acc]
+    | x :: xs ->
+        // Fix for keywords inside a string
+        if x.StartsWith("\"") then
+            split_all (acc @ [x]) if_case true xs
+        elif x.EndsWith("\"") then
+            split_all (acc @ [x]) if_case false xs
 
-        elif contains x "=" && not(ends_with x "=") && not(starts_with x "if") then
-            let (a, b) = split_line_inc "=" x
-            a :: aux (b :: xs)
-          
-        elif contains x "->" && not(ends_with x "->") then
-            let (a, b) = split_line_inc "->" x
-            a :: aux (b :: xs)
+        // Fix for an = inside an if case
+        elif not(in_string) && (x = "if" || x = "elif") then
+            acc :: split_all [x] true in_string xs
+        elif not(in_string) && (x = "then") then
+            (acc @ [x]) :: split_all [] false in_string xs
 
-        elif contains x "then" && not(ends_with x "then") then
-            let (a, b) = split_line_inc "then" x
-            a :: aux (b :: xs)
+        // ELSE and IN : split before and after
+        elif not(in_string) && (x = "else" || x = "in") then
+            acc :: [x] :: split_all [] if_case in_string xs
 
-        elif contains x "else" then
-            let (a, b) = split_line_exc "else" x
-            let (c, d) = split_line_exc "else" x
-            a :: b :: aux xs
+        // Split before this keyword
+        elif not(in_string) && (x = "match" || x = "let" || x = "|") then
+            acc :: split_all [x] if_case in_string xs
+        // Split after this keyword
+        elif not(in_string) && ((x = "=" && not(if_case)) || x = "->") then
+            (acc @ [x]) :: split_all [] if_case in_string xs
 
-        elif contains x "|" then
-            let (a, b) = split_line_exc "|" x
-            a :: b :: aux xs
+        // Not a special keyword: add to accumulator
+        else split_all (acc @ [x]) if_case in_string xs
 
-        else x :: aux xs
-    
-    in split_lines s |> aux*)
+    /// Joins lines if possible
+    let rec split_collect : string list -> string list = function
+    | [] -> []
+    | last :: [] -> [last]
+    | first :: second :: xs ->
+        if second.Length < w
+           && ends_with_mul first ["->"; "="; "then"; "else"; "in"]
+           && not(starts_with_mul second ["fun"; "if"; "elif"; "in"; "match"; "let"; "else"; "|"]) then
+               // Collect two lines
+               (first + " " + second) :: split_collect xs
+        else first :: split_collect (second :: xs)
+
+
+    in split_lines s // Split every \n
+        |> map (tokenize_line >> split_all [] false false >> map (string_concat " "))
+        |> list_concat
+        |> filter (fun x -> x <> "") // Remove empty lines
+        |> map trim_line // Remove tab and spaces
+        |> split_collect

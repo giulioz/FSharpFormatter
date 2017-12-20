@@ -58,6 +58,7 @@
     <Compile Include="Formatter.fs" />
     <Compile Include="Test.fs" />
     <Compile Include="Test2.fs" />
+    <Compile Include="TestInfinite.fs" />
     <Compile Include="Main.fs" />
     <None Include="App.config" />
     <Content Include="packages.config" />

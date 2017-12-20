@@ -1,4 +1,7 @@
-﻿// -------------------------------------------------------------------------------
+﻿module TestInfinite
+
+let infinite = """
+// -------------------------------------------------------------------------------
 //    _____ ____  _                      _____                          _   _
 //   |  ___/ ___|| |__   __ _ _ __ _ __ |  ___|__  _ __ _ __ ___   __ _| |_| |_ ___  _ __
 //   | |_  \___ \| '_ \ / _` | '__| '_ \| |_ / _ \| '__| '_ ` _ \ / _` | __| __/ _ \| '__|
@@ -116,7 +119,6 @@ let rec indent (lines : string list) =
         if count stack = 1 then []
         else failwith "Invalid input: unclosed binding"
     | str :: after ->
-        try
             // Current line indendation
             let current_line =
                 if starts_with str "|" then
@@ -131,13 +133,13 @@ let rec indent (lines : string list) =
             // Stack value for the next line
             let next_stack =
                 // Open Return Value
-                if str = "else" || ends_with_mul str ["->"; "in"; "function"] then
+                if str = "else" || ends_with_mul str ["->"; "in"] then
                     (peek current_stack + 1) |> push (pop current_stack)
                 // Open Intermediate
                 elif ends_with_mul str ["then"; "="] then
                     (peek current_stack + 1) |> (push current_stack)
                 // Single-line Intermediate
-                elif str = "" || starts_with_mul str ["let"; "if"; "elif"; "//"; "///"; "open"; "module"] then
+                elif str = "" || starts_with_mul str ["let"; "if"; "elif"] then
                     current_stack
                 // Single-line Return Value
                 else pop current_stack
@@ -147,11 +149,10 @@ let rec indent (lines : string list) =
             let (next_last_stack, next_match_opening_tabs) =
                 // Match begin: push the state into the stack
                 // Every pattern after a match begin must be at that tab level
-                if starts_with str "match" || ends_with str "function" then
+                if starts_with str "match" then
                     (stack |> push last_stack, peek stack |> push match_opening_tabs)
                 // Known intermediate token: do nothing
-                elif starts_with_mul str ["|"; "let"; "if"; "elif"; "//"; "///"; "open"; "module"]
-                    || ends_with_mul str ["then"; "="] || str = "" then
+                elif starts_with_mul str ["|"; "let"; "if"; "elif"] || ends_with_mul str ["then"; "="] || str = "" then
                     (last_stack, match_opening_tabs)
                 // Return value: check if indendation is behind match
                 elif count match_opening_tabs > 0 && (peek match_opening_tabs) > peek stack then
@@ -165,9 +166,6 @@ let rec indent (lines : string list) =
                 (0, "") :: current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
             else
                 current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
-        with
-        // Trying to pop an empty stack: something must be wrong...
-        | :? ArgumentException -> failwithf "Invalid input in line %d: %s" i str
     in aux (0, [0]) ((0, []), []) (0, []) 0 lines
 
 
@@ -184,18 +182,14 @@ let split (w : int) (s : string) =
         elif x.EndsWith("\"") then
             split_all (acc @ [x]) if_case false xs
 
-        // Split comments to newline
-        elif x = "//" || x = "///" then
-            acc :: [x :: xs]
-
         // Fix for an = inside an if case
         elif not(in_string) && (x = "if" || x = "elif") then
             acc :: split_all [x] true in_string xs
         elif not(in_string) && (x = "then") then
             (acc @ [x]) :: split_all [] false in_string xs
 
-        // Split before and after
-        elif not(in_string) && (x = "else" || x = "in" || x = "function") then
+        // ELSE and IN : split before and after
+        elif not(in_string) && (x = "else" || x = "in") then
             acc :: [x] :: split_all [] if_case in_string xs
 
         // Split before this keyword
@@ -213,17 +207,11 @@ let split (w : int) (s : string) =
     | [] -> []
     | last :: [] -> [last]
     | first :: second :: xs ->
-        if second.Length < w
-           && ends_with_mul first ["->"; "="; "then"; "else"; "in"; "function"]
-           && not(starts_with_mul second ["fun"; "if"; "elif"; "in"; "match"; "let"; "else"; "|"; "function"; "//"; "///"]) then
+        if second.Length < w && ends_with_mul first ["->"; "="; "then"; "else"; "in"] && not(starts_with_mul second ["fun"; "if"; "elif"; "in"; "match"; "let"; "else"; "|"]) then
                // Collect two lines
                (first + " " + second) :: split_collect xs
         else first :: split_collect (second :: xs)
 
 
-    in split_lines s // Split every \n
-        |> map (tokenize_line >> split_all [] false false >> map (string_concat " "))
-        |> list_concat
-        |> filter (fun x -> x <> "") // Remove empty lines
-        |> map trim_line // Remove tab and spaces
-        |> split_collect
+    in split_lines s |> map (tokenize_line >> split_all [] false false >> map (string_concat " ")) |> list_concat |> filter (fun x -> x <> "") |> map trim_line |> split_collect
+"""

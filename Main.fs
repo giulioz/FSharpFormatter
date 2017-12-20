@@ -11,8 +11,8 @@ let format w s = render (Formatter.indent (Formatter.split w s))
 
 [<EntryPoint>]
 let main _ = 
-    let width = 999
-    let input = Test2.all
+    let width = 0
+    let input = TestInfinite.infinite + Test2.all
     printfn "------------INPUT------------\n%s" input
     let output = format width input
     printfn "\n------------OUTPUT------------\n%s" output

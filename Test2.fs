@@ -189,7 +189,7 @@ module Basic =
                 if 7 > 6 then true
                 elif 8 > 9 then false
                 else 5
-            fff 7
+            fff 7 // casini?
         | 10 ->
             if 1 > 0 then
                 if 5 > 7 then
@@ -231,14 +231,15 @@ module Basic =
                       | 8 -> m
                   hhh 999
 
+    // Questa è una prova per vedere se vanno i commenti
     let prova a =
         let x =
             fun x ->
                 match x with
-                | 0 -> 0
+                | 0 -> 0 // commento in un pattern
                 | _ ->
                     if x > 0 then -2 * x
-                    else 2 * x
+                    else 2 * x // qua dovrebbe splittare
         let y =
             fun y -> y - 1
         x a + y a

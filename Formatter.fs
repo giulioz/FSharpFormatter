@@ -51,19 +51,19 @@ let rec private count = function
 // -------------------------------------------
 
 /// Create a new List with a function applied
-let rec private map f = function
+let rec private list_map f = function
     | [] -> []
-    | x :: xs -> (f x) :: (map f xs)
+    | x :: xs -> (f x) :: (list_map f xs)
 
 /// Create a new List without the elements that match a given predicate
-let rec private filter f = function
+let rec private list_filter f = function
     | [] -> []
-    | x :: xs -> if f x then x :: (filter f xs) else filter f xs
+    | x :: xs -> if f x then x :: (list_filter f xs) else list_filter f xs
 
 /// Return if a given predicate is true at least with one item of a List
-let rec private exists f = function
+let rec private list_exists f = function
     | [] -> false
-    | x :: xs -> (f x) || (exists f xs)
+    | x :: xs -> (f x) || (list_exists f xs)
 
 /// Create a new list that contains every item of a list
 let rec private list_concat = function
@@ -91,11 +91,11 @@ let private ends_with (str : string) tok =
 
 /// Returns true if the first token of a string is a member of tok
 let private starts_with_mul (str : string) tok =
-    exists (starts_with str) tok
+    list_exists (starts_with str) tok
 
 /// Returns true if the last token of a string is a member of tok
 let private ends_with_mul (str : string) tok =
-    exists (ends_with str) tok
+    list_exists (ends_with str) tok
 
 /// Create a string from a list with a separator
 let rec private string_concat separator = function
@@ -110,28 +110,21 @@ let rec private string_concat separator = function
 
 /// Indents splitted lines of code
 let rec indent (lines : string list) =
-    let rec aux stack last_stack match_opening_tabs i = function
-    | [] ->
-        // Check if every binding was closed
-        if count stack = 1 then []
-        else failwith "Invalid input: unclosed binding"
+    let rec indent_line stack last_stack match_opening_tabs i = function
     | str :: after ->
         try
-            // Current line indendation
-            let current_line =
-                if starts_with str "|" then
-                    (peek (peek last_stack), str) // Recover last stack state
-                else (peek stack, str)
             // Current indendation stack
             let current_stack =
                 if starts_with str "|" then
                     peek last_stack // Recover last stack state
                 else stack
+            // Current line indendation
+            let current_line = (peek current_stack, str)
 
             // Stack value for the next line
             let next_stack =
                 // Open Return Value
-                if str = "else" || ends_with_mul str ["->"; "in"; "function"] then
+                if ends_with_mul str ["->"; "in"; "function"; "else"] then
                     (peek current_stack + 1) |> push (pop current_stack)
                 // Open Intermediate
                 elif ends_with_mul str ["then"; "="] then
@@ -153,22 +146,25 @@ let rec indent (lines : string list) =
                 elif starts_with_mul str ["|"; "let"; "if"; "elif"; "//"; "///"; "open"; "module"]
                     || ends_with_mul str ["then"; "="] || str = "" then
                     (last_stack, match_opening_tabs)
-                // Return value: check if indendation is behind match
-                elif count match_opening_tabs > 0 && (peek match_opening_tabs) > peek stack then
-                    (pop last_stack, pop match_opening_tabs)
-                // Return value (after the match)
-                else (last_stack, match_opening_tabs)
+                else
+                    // Return value: check if indendation is behind match
+                    if count match_opening_tabs > 0 && (peek match_opening_tabs) > peek stack then
+                        (pop last_stack, pop match_opening_tabs)
+                    else (last_stack, match_opening_tabs)
 
             // Append current line and continue recursion
             // (adding an empty line between top-level bindings)
             if peek current_stack = 0 then
-                (0, "") :: current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
+                (0, "") :: current_line :: (indent_line next_stack next_last_stack next_match_opening_tabs (i + 1) after)
             else
-                current_line :: (aux next_stack next_last_stack next_match_opening_tabs (i + 1) after)
+                current_line :: (indent_line next_stack next_last_stack next_match_opening_tabs (i + 1) after)
         with
         // Trying to pop an empty stack: something must be wrong...
         | :? ArgumentException -> failwithf "Invalid input in line %d: %s" i str
-    in aux (0, [0]) ((0, []), []) (0, []) 0 lines
+
+    // Input program ended! Check if every binding was closed
+    | [] -> if count stack = 1 then [] else failwith "Invalid input: unclosed binding"
+    in indent_line (0, [0]) ((0, []), []) (0, []) 0 lines
 
 
 /// Splits F# code given ideal width in characters
@@ -218,12 +214,14 @@ let split (w : int) (s : string) =
            && not(starts_with_mul second ["fun"; "if"; "elif"; "in"; "match"; "let"; "else"; "|"; "function"; "//"; "///"]) then
                // Collect two lines
                (first + " " + second) :: split_collect xs
-        else first :: split_collect (second :: xs)
+        else
+            // Leave lines splitted if impossible
+            first :: split_collect (second :: xs)
 
 
-    in split_lines s // Split every \n
-        |> map (tokenize_line >> split_all [] false false >> map (string_concat " "))
+    in s.Split ([|'\n'; '\r'|], StringSplitOptions.None) |> Array.map trim_line |> List.ofArray // Split every newline (portable, unlike Lib.fs)
+        |> list_map (tokenize_line >> split_all [] false false >> list_map (string_concat " "))
         |> list_concat
-        |> filter (fun x -> x <> "") // Remove empty lines
-        |> map trim_line // Remove tab and spaces
+        |> list_filter (fun x -> x <> "") // Remove empty lines
+        |> list_map trim_line // Remove tab and spaces
         |> split_collect

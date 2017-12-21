@@ -1,10 +1,11 @@
 ﻿<Properties StartupConfiguration="{6C68B6EB-79C4-47FF-89C0-4F0DD22DC642}|Default">
-  <MonoDevelop.Ide.Workbench>
+  <MonoDevelop.Ide.Workbench ActiveDocument="Test2.fs">
     <Files>
-      <File FileName="Formatter.fs" Line="104" Column="56" />
+      <File FileName="Formatter.fs" Line="198" Column="79" />
       <File FileName="Lib.fs" Line="12" Column="24" />
       <File FileName="Main.fs" Line="15" Column="50" />
       <File FileName="TestInfinite.fs" Line="193" Column="60" />
+      <File FileName="Test2.fs" Line="186" Column="20" />
     </Files>
   </MonoDevelop.Ide.Workbench>
   <MonoDevelop.Ide.Workspace ActiveConfiguration="Debug" />
